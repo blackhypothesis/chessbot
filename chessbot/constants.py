@@ -1,12 +1,16 @@
+# 2540 x 1440
 x0 = 750
 y0 = 260
-board_size = 1048
+# 1920 x 1080
+# x0 = 545
+# y0 = 205
 
-USERNAME = 'albertoslipmouse'
-PASSWORD = 'Ishee4bo'
+
 
 LICHESS_LOGIN = 'https://lichess.org/login'
 BASE_URL = 'https://lichess.org/'
+
+STOCKFISH = '/home/marcel/bin/stockfish'
 
 # setoption name Threads value
 THREADS = 8

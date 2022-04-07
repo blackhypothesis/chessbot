@@ -16,7 +16,7 @@ logging.basicConfig(
     level=logging.INFO)
 
 # run stockfish as a subprocess:
-p = Popen(['/home/marcel/workspace/ChessAnalyse/assets/bin/stockfish-bmi2'],
+p = Popen([const.STOCKFISH],
           stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False, universal_newlines=True)
 # wrap p.stdout with a NonBlockingStreamReader object:
 nbsr = NBSR(p.stdout)
@@ -48,8 +48,8 @@ mainlogger.info('###############################################################
 with Chessbot(teardown=False) as bot:
     ext_ip = bot.get_external_ip()
     mainlogger.info(f'External IP: {ext_ip}')
-    bot.chess_login()
-    # bot.land_first_page()
+    # bot.chess_login()
+    bot.land_first_page()
     # wait a second, till the page is loaded
     time.sleep(2)
     bot.select_game()

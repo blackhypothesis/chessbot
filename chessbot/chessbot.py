@@ -209,8 +209,8 @@ class Chessbot(webdriver.Chrome):
         pyautogui.click()
 
     def mouse_move(self, cx, cy):
-        x_pos = cx * const.board_size / 8 + const.x0
-        y_pos = (8 - int(cy)) * const.board_size / 8 + const.y0
+        x_pos = cx * self.board_x_size / 8 + const.x0
+        y_pos = (8 - int(cy)) * self.board_y_size / 8 + const.y0
         pyautogui.moveTo(x_pos, y_pos)
 
     ###############################################################################################################
