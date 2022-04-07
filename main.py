@@ -46,6 +46,8 @@ mainlogger.info('###############################################################
 mainlogger.info('###################################################################')
 
 with Chessbot(teardown=False) as bot:
+    ext_ip = bot.get_external_ip()
+    mainlogger.info(f'External IP: {ext_ip}')
     bot.chess_login()
     # bot.land_first_page()
     # wait a second, till the page is loaded
@@ -208,7 +210,7 @@ with Chessbot(teardown=False) as bot:
                     else:
                         mainlogger.info(f'{seconds} seconds left')
                         if seconds > 30:
-                            wait_seconds = random.randint(0, 7)
+                            wait_seconds = random.randint(1, 7)
                             mainlogger.info(f'wait {wait_seconds} seconds ...')
                             time.sleep(wait_seconds)
 

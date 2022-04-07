@@ -518,6 +518,8 @@ class Chessbot(webdriver.Chrome):
             for y in range(8):
                 self.board[x][y] = 'empty field'
 
+    ###############################################################################################################
+    # get elapsed time in seconds from the chess clock
     def get_time_left_seconds(self):
         try:
             # we need only the time of the clock on the bottom.
@@ -532,5 +534,12 @@ class Chessbot(webdriver.Chrome):
         minutes = int(min_sec[:2])
         seconds = int(min_sec[3:5])
         return minutes * 60 + seconds
+
+    ###############################################################################################################
+    # get external IP
+    def get_external_ip(self):
+        self.get("https://myexternalip.com/")
+        ext_ip = self.find_element(By.ID, 'ip').text
+        return ext_ip
 
 ###############################################################################################################
