@@ -2,8 +2,7 @@ x0 = 750
 y0 = 260
 board_size = 1048
 
-USERNAME = 'albertoslipmouse'
-PASSWORD = 'Ishee4bo'
+
 
 LICHESS_LOGIN = 'https://lichess.org/login'
 BASE_URL = 'https://lichess.org/'
