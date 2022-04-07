@@ -200,6 +200,19 @@ with Chessbot(teardown=False) as bot:
                 selected_score = multi_pv_moves[move_nr]['score']
                 selected_move = multi_pv_moves[move_nr]['move']
 
+                # wait some time to make the reaction time arbitrary
+                if number_half_moves > 12:
+                    seconds = bot.get_time_left_seconds()
+                    if seconds is None:
+                        mainlogger.warning('cannot get time left in seconds')
+                    else:
+                        mainlogger.info(f'{seconds} seconds left')
+                        if seconds > 30:
+                            wait_seconds = random.randint(0, 7)
+                            mainlogger.info(f'wait {wait_seconds} seconds ...')
+                            time.sleep(wait_seconds)
+
+
                 print(f'Selected move: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} rand: {rand}')
                 mainlogger.info(f'###--- PLAY SELECTED MOVE: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} [{score_loss_current}]---###')
 

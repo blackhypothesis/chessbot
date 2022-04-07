@@ -80,7 +80,6 @@ class Chessbot(webdriver.Chrome):
         )
         submit.click()
 
-
     def land_first_page(self):
         self.get(const.BASE_URL)
         botlogger.debug(f'landing on page: {const.BASE_URL}')
@@ -92,10 +91,10 @@ class Chessbot(webdriver.Chrome):
 
         ).click()
 
-#############################################################################################################
+    #############################################################################################################
 
     def go_play(self):
-       # FEN string
+        # FEN string
         fen = ''
 
         # DEBUG: all child elements
@@ -107,7 +106,7 @@ class Chessbot(webdriver.Chrome):
             status = self.get_position_of_pieces()
 
         # status = self.get_last_move()
-        #while status == False:
+        # while status == False:
         #    botlogger.warning('get_last_move: cannot get last move piece, will try again')
         #    status = self.get_last_move()
 
@@ -257,7 +256,7 @@ class Chessbot(webdriver.Chrome):
                 'coords'
             ).get_attribute('class')
             if coords == 'ranks black':
-                self.orientation= 'black'
+                self.orientation = 'black'
             botlogger.info(f'orientation: {self.orientation}')
         except:
             self.orientation = None
@@ -368,17 +367,20 @@ class Chessbot(webdriver.Chrome):
             # this element does point to the king which is in check, but we need the last piece which moved
             # only process class == 'last-move'
             if last_move_class == 'last-move':
-                square_x, square_y = self.get_piece_coordinates(last_move_coordinates, self.board_x_size, self.board_y_size)
-                botlogger.debug(f'last_move_class == last-move last move piece: i={i}, x={square_x}, y={square_y}, last_move_coordinate={last_move_coordinates}')
+                square_x, square_y = self.get_piece_coordinates(last_move_coordinates, self.board_x_size,
+                                                                self.board_y_size)
+                botlogger.debug(
+                    f'last_move_class == last-move last move piece: i={i}, x={square_x}, y={square_y}, last_move_coordinate={last_move_coordinates}')
                 if square_x == -1:
                     botlogger.warning(f'square_x = {square_x} out of range')
                     return False
 
                 if i == 0:
                     self.last_move_piece = self.board[square_x - 1][square_y - 1]
-                    botlogger.debug(f'i == 0 last move piece: i={i}, x={square_x}, y={square_y}, piece={self.last_move_piece}')
+                    botlogger.debug(
+                        f'i == 0 last move piece: i={i}, x={square_x}, y={square_y}, piece={self.last_move_piece}')
 
-                    if (square_x == 1 or square_x == 8) and (square_y ==1 or square_y == 8):
+                    if (square_x == 1 or square_x == 8) and (square_y == 1 or square_y == 8):
                         # rochade is from king to corner square, therefore last_move_piece == 'empty field'
                         # if last move was rochade
                         if self.last_move_piece == 'empty field':
@@ -387,7 +389,8 @@ class Chessbot(webdriver.Chrome):
                                     self.last_move_piece = 'white king'
                                 if square_y == 8:
                                     self.last_move_piece = 'black king'
-                            botlogger.debug(f'Rochade: last move piece: i={i}, x={square_x}, y={square_y}, piece={self.last_move_piece}')
+                            botlogger.debug(
+                                f'Rochade: last move piece: i={i}, x={square_x}, y={square_y}, piece={self.last_move_piece}')
                             return True
 
                     # no rochade and empty -> piece cannot be determined
@@ -432,7 +435,7 @@ class Chessbot(webdriver.Chrome):
             self.half_moves = -2
             return -2
 
-        self.half_moves =  len(move_list)
+        self.half_moves = len(move_list)
         return self.half_moves
 
     ###############################################################################################################
@@ -514,6 +517,20 @@ class Chessbot(webdriver.Chrome):
         for x in range(8):
             for y in range(8):
                 self.board[x][y] = 'empty field'
+
+    def get_time_left_seconds(self):
+        try:
+            # we need only the time of the clock on the bottom.
+            clock_bottom = self.find_element(
+                By.XPATH,
+                '//*[@id="main-wrap"]/main/div[1]/div[8]/div[2]'
+            )
+        except:
+            return None
+
+        min_sec = clock_bottom.get_attribute("textContent")
+        minutes = int(min_sec[:2])
+        seconds = int(min_sec[3:5])
+        return minutes * 60 + seconds
+
 ###############################################################################################################
-
-

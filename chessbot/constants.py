@@ -2,7 +2,8 @@ x0 = 750
 y0 = 260
 board_size = 1048
 
-
+USERNAME = 'albertoslipmouse'
+PASSWORD = 'Ishee4bo'
 
 LICHESS_LOGIN = 'https://lichess.org/login'
 BASE_URL = 'https://lichess.org/'
@@ -10,10 +11,10 @@ BASE_URL = 'https://lichess.org/'
 # setoption name Threads value
 THREADS = 8
 # Time Format
-TF = 1
+TF = 3
 # go depth
 # 1 + 0 -> 16
-MAX_DEPTH = 12
+MAX_DEPTH = 10
 # playing strength
 SCORE_LOSS_MIN = 0
 SCORE_LOSS_MAX = 450
