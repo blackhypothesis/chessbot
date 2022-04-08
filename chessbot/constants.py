@@ -5,8 +5,6 @@ y0 = 260
 # x0 = 545
 # y0 = 205
 
-
-
 LICHESS_LOGIN = 'https://lichess.org/login'
 BASE_URL = 'https://lichess.org/'
 
@@ -15,7 +13,7 @@ STOCKFISH = '/home/marcel/bin/stockfish'
 # setoption name Threads value
 THREADS = 8
 # Time Format
-TF = 3
+TF = 1
 # go depth
 # 1 + 0 -> 16
 MAX_DEPTH = 10
@@ -23,7 +21,7 @@ MAX_DEPTH = 10
 SCORE_LOSS_MIN = 0
 SCORE_LOSS_MAX = 450
 SCORE_LOSS_INCREASE = 30
-BEST_MOVE_PROBABILITY = 0.1
+BEST_MOVE_PROBABILITY = 1
 # setoption name MultiPV value
 MULTI_PV = 4
 

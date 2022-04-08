@@ -60,6 +60,7 @@ with Chessbot(teardown=False) as bot:
             orientation = bot.get_board_orientation()
 
         bot.get_board_size()
+        bot.get_board_location()
         print(f'orientation = {orientation}')
         bot.get_cg_board_element()
 
@@ -109,12 +110,16 @@ with Chessbot(teardown=False) as bot:
                 multi_pv_moves = [{"depth": -1, "score": 0, "move": '-'}] * const.MULTI_PV
 
                 while True:
+                    depth = 0
                     output = nbsr.readline(0.1)
                     # 0.1 secs to let the stockfish output the result
+
                     if not output:
                         mainlogger.info('SF: ### END of data ###')
                     else:
                         output = output[:-1]
+                        if 'info depth' not in output:
+                            mainlogger.info(f'SF: {output}')
 
                         if 'bestmove' in output:
                             best_move = output
@@ -130,15 +135,13 @@ with Chessbot(teardown=False) as bot:
                             nodes = result.group(6)
                             nps = result.group(7)
                             move_list = result.group(11)
-                            # print(depth, seldepth, multipv, score_type, score, nodes, nps)
-                            # print(move_list)
 
                             depth = int(depth)
                             multipv = int(multipv)
                             score = int(score)
 
                             if depth > const.MAX_DEPTH - 2:
-                                mainlogger.info(f'SF: {output}')
+                                mainlogger.info(f'SF> {output}')
 
                             if score_type == 'mate':
                                 if score < 0:
@@ -203,36 +206,23 @@ with Chessbot(teardown=False) as bot:
                 selected_move = multi_pv_moves[move_nr]['move']
 
                 # wait some time to make the reaction time arbitrary
-                if number_half_moves > 12:
-                    seconds = bot.get_time_left_seconds()
-                    if seconds is None:
-                        mainlogger.warning('cannot get time left in seconds')
-                    else:
-                        mainlogger.info(f'{seconds} seconds left')
-                        if seconds > 30:
-                            wait_seconds = random.randint(1, 7)
-                            mainlogger.info(f'wait {wait_seconds} seconds ...')
-                            time.sleep(wait_seconds)
+                # only if timeformat is not bullet
+                if const.TF != 1:
+                    if number_half_moves > 12:
+                        seconds = bot.get_time_left_seconds()
+                        if seconds is None:
+                            mainlogger.warning('cannot get time left in seconds')
+                        else:
+                            mainlogger.info(f'{seconds} seconds left')
+                            if seconds > 30:
+                                wait_seconds = random.randint(1, 7)
+                                mainlogger.info(f'wait {wait_seconds} seconds ...')
+                                time.sleep(wait_seconds)
 
 
                 print(f'Selected move: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} rand: {rand}')
                 mainlogger.info(f'###--- PLAY SELECTED MOVE: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} [{score_loss_current}]---###')
 
                 bot.play_move(selected_move)
-
-
-                # mainlogger.info(f'BESTMOVE: {best_move}')
-
-                result = re.search(r'bestmove (\w+)', best_move)
-                try:
-                    move = result.group(1)
-                    # mainlogger.info(f'play BESTMOVE: {move}')
-
-                    # ## play best move ###
-                    # bot.play_best_move(move)
-
-                except:
-                    mainlogger.warning('best move not available')
-                    fen_old = ''
 
             time.sleep(0.2)

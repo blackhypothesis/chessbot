@@ -29,6 +29,9 @@ class Chessbot(webdriver.Chrome):
     # board size
     board_x_size = 0
     board_y_size = 0
+    # board_location
+    board_x_location = 0
+    board_y_location = 0
     # last move piece
     last_move_piece = ''
     # cg_board contains all pieces on the board and the last move
@@ -178,17 +181,18 @@ class Chessbot(webdriver.Chrome):
         return fen
 
     ###############################################################################################################
+    # play move
     def play_move(self, bm):
-        x1 = ord(bm[:1]) - 96
-        y1 = int(bm[1:2])
-        x2 = ord(bm[2:3]) - 96
-        y2 = int(bm[3:4])
+        x1 = ord(bm[:1]) - 96 - 1
+        y1 = int(bm[1:2]) - 1
+        x2 = ord(bm[2:3]) - 96 - 1
+        y2 = int(bm[3:4]) - 1
 
         if self.orientation == 'black':
-            x1 = 9 - x1
-            y1 = 9 - y1
-            x2 = 9 - x2
-            y2 = 9 - y2
+            x1 = 7 - x1
+            y1 = 7 - y1
+            x2 = 7 - x2
+            y2 = 7 - y2
 
         botlogger.debug(f'orientation: {self.orientation} active_color: {self.active_color}')
         if self.orientation[:1] == self.active_color:
@@ -196,21 +200,13 @@ class Chessbot(webdriver.Chrome):
             pyautogui.click()
             self.mouse_move(x2, y2)
             pyautogui.click()
-            # move mouse out of board
-            # self.mouse_move(9, 9)
             botlogger.debug(f'move: [{x1} {y1}], [{x2} {y2}]')
 
-    def right_click_field(self, cx, cy):
-        self.mouse_move(cx, cy)
-        pyautogui.rightClick()
-
-    def left_click_field(self, cx, cy):
-        self.mouse_move(cx, cy)
-        pyautogui.click()
-
     def mouse_move(self, cx, cy):
-        x_pos = cx * self.board_x_size / 8 + const.x0
-        y_pos = (8 - int(cy)) * self.board_y_size / 8 + const.y0
+        x_pos = cx * (self.board_x_size / 8) + self.board_x_size / 24 + self.board_x_location
+        y_pos = (7 - cy) * (self.board_y_size / 8) + self.board_y_size / 24 + self.board_y_location
+
+        botlogger.debug(f'board_x_location: {self.board_x_location}, board_y_location: {self.board_y_location}, x_pos: {x_pos}, y_pos: {y_pos}')
         pyautogui.moveTo(x_pos, y_pos)
 
     ###############################################################################################################
@@ -229,14 +225,8 @@ class Chessbot(webdriver.Chrome):
             print(f'ERROR: Regex does not get group from string: {piece_coordinates_string}')
             return -1, -1
 
-        half_square_x_size = board_x_size / 16
-        half_square_y_size = board_y_size / 16
-
-        square_x = int((x + half_square_x_size) / (board_x_size / 8) + 1)
-        square_y = int(8 - (y + half_square_y_size) / (board_y_size / 8))
-
-        square_x = int(x / board_x_size * 8 + 1)
-        square_y = int(8 - y / board_y_size * 8)
+        square_x = int(x / (board_x_size / 8) + 0.5) + 1
+        square_y = 8 - int(y / (board_y_size / 8) + 0.5)
 
         if self.orientation == 'black':
             square_x = 9 - square_x
@@ -273,18 +263,45 @@ class Chessbot(webdriver.Chrome):
                 By.TAG_NAME,
                 'cg-container'
             )
-            board_size = cg_container.get_attribute('style')
-            result = re.search(r'width: ([\d\.]+)px; height: ([\d\.]+)px;', board_size)
-            self.board_x_size = int(round(float(result.group(1))))
-            self.board_y_size = int(round(float(result.group(2))))
+            size = cg_container.size
+            self.board_x_size = size['width']
+            self.board_y_size = size['height']
+
             if const.DEBUG:
                 botlogger.info(f'boardsize: {self.board_x_size}, {self.board_y_size}')
         except:
             self.board_x_size = 0
             self.board_y_size = 0
 
-            botlogger.warning('boardsize cannot be determined')
+            botlogger.warning('board_size cannot be determined')
         return self.board_x_size, self.board_y_size
+
+    ###############################################################################################################
+    # board location
+    # the board location cannot be determined absolutely exactly
+    def get_board_location(self):
+        try:
+            board = self.find_element(
+                By.TAG_NAME,
+                'cg-container'
+            )
+            location = board.location
+            location_x = location['x']
+            location_y = location['y']
+            # win_location = board.get_window_position('current')
+            canvas_x_offset = self.execute_script(
+                "return window.screenX + (window.outerWidth - window.innerWidth) / 2 - window.scrollX;")
+            canvas_y_offset = self.execute_script(
+                "return window.screenY + (window.outerHeight - window.innerHeight) - window.scrollY;")
+            self.board_x_location = canvas_x_offset + location_x
+            self.board_y_location = canvas_y_offset + location_y
+            botlogger.info(f'board_location: board_x_location: {self.board_x_location}, board_y_location: {self.board_y_location}')
+        except:
+            self.board_x_location = 0
+            self.board_y_location = 0
+            botlogger.warning('board_location: cannot be determined')
+
+        return self.board_x_location, self.board_y_location
 
     ###############################################################################################################
     # cg_board
@@ -432,8 +449,8 @@ class Chessbot(webdriver.Chrome):
                 'u8t'
             )
         except:
-            self.half_moves = -2
-            return -2
+            self.half_moves = 0
+            return 0
 
         self.half_moves = len(move_list)
         return self.half_moves
