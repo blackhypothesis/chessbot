@@ -48,8 +48,10 @@ mainlogger.info('###############################################################
 with Chessbot(teardown=False) as bot:
     ext_ip = bot.get_external_ip()
     mainlogger.info(f'External IP: {ext_ip}')
-    # bot.chess_login()
-    if not const.TV:
+
+    if not const.ANON:
+        bot.chess_login()
+    elif not const.TV:
         bot.land_first_page(const.BASE_URL)
     else:
         bot.land_first_page(const.TV_URL)
@@ -233,6 +235,8 @@ with Chessbot(teardown=False) as bot:
                 selected_score = multi_pv_moves[move_nr]['score']
                 selected_move = multi_pv_moves[move_nr]['move']
 
+                print(f'Selected move: #: {move_nr + 1}, move: {selected_move}, score: {selected_score}, score_loss: {score_loss} [{score_loss_current}], rand: {rand}')
+
                 # wait some time to make the reaction time arbitrary
                 # only if timeformat is not bullet
                 if const.TF != 1:
@@ -243,12 +247,12 @@ with Chessbot(teardown=False) as bot:
                         else:
                             mainlogger.info(f'{seconds} seconds left')
                             if seconds > 30:
-                                wait_seconds = random.randint(1, 7)
-                                mainlogger.info(f'wait {wait_seconds} seconds ...')
+                                wait_seconds = random.uniform(0.3, 7.0)
+                                if seconds < 60:
+                                    wait_seconds = wait_seconds / 2
+                                mainlogger.info('wait ' + '{0:.2f}'.format(wait_seconds) + ' seconds' )
                                 time.sleep(wait_seconds)
 
-
-                print(f'Selected move: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} rand: {rand}')
                 mainlogger.info(f'###--- PLAY SELECTED MOVE: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} [{score_loss_current}]---###')
 
                 if not const.TV:
