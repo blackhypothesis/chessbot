@@ -13,7 +13,8 @@ location_y = 0
 size_x = 0
 size_y = 0
 
-while True:
+
+def board_position():
     try:
         board = driver.find_element(
             By.XPATH,
@@ -57,6 +58,36 @@ while True:
             y_pos = y * (size_y / 8) + size_y / 24 + absolute_board_position['y']
 
             pyautogui.moveTo(x_pos, y_pos)
+            print(f'x_pos: {x_pos}, y_pos: {y_pos}')
             time.sleep(0.2)
 
     time.sleep(5)
+
+
+def get_player_names():
+    bottom_user_name = driver.find_element(
+        By.XPATH,
+        '//*[@id="main-wrap"]/main/div[1]/div[5]/a'
+    ).text
+
+    bottom_user_rating = driver.find_element(
+        By.XPATH,
+        '//*[@id="main-wrap"]/main/div[1]/div[5]/rating'
+    ).text
+
+    upper_user_name = driver.find_element(
+        By.XPATH,
+        '//*[@id="main-wrap"]/main/div[1]/div[5]/a'
+    ).text
+
+    upper_user_rating = driver.find_element(
+        By.XPATH,
+        '//*[@id="main-wrap"]/main/div[1]/div[5]/rating'
+    ).text
+    
+    print(f'User Name: {bottom_user_name}, {bottom_user_rating}')
+
+
+get_player_names()
+
+

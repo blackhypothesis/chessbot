@@ -11,7 +11,7 @@ mainlogger = logging.getLogger(__name__)
 mainlogger.setLevel(logging.DEBUG)
 
 logging.basicConfig(
-    filename=const.LOG_FILE,
+    filename=f'{const.LOG_FILE_PATH}/chessbot.log',
     format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
     level=logging.INFO)
 
@@ -49,10 +49,16 @@ with Chessbot(teardown=False) as bot:
     ext_ip = bot.get_external_ip()
     mainlogger.info(f'External IP: {ext_ip}')
     # bot.chess_login()
-    bot.land_first_page()
+    if not const.TV:
+        bot.land_first_page(const.BASE_URL)
+    else:
+        bot.land_first_page(const.TV_URL)
+
     # wait a second, till the page is loaded
     time.sleep(2)
-    bot.select_game()
+
+    if not const.TV:
+        bot.select_game()
 
     while True:
         orientation = bot.get_board_orientation()
@@ -67,19 +73,40 @@ with Chessbot(teardown=False) as bot:
         fen_old = ''
         score_loss_current = const.SCORE_LOSS_MIN
 
+        # old number of half moves
+        old_number_half_moves = bot.get_number_of_half_moves()
+        if old_number_half_moves == 0:
+            old_number_half_moves = -2
+        mainlogger.info(f'old_number_half_moves: {old_number_half_moves}')
+
         while True:
             best_move = ''
             fen = ''
-            number_half_moves = bot.get_number_of_half_moves()
 
             ricons = bot.get_ricons()
             if ricons is None:
+                bot.get_player_names()
+                move_list = bot.get_move_list()
+                mainlogger.info(f'Movelist: {move_list}')
                 mainlogger.info('### --- GAME FINISHED --- ###')
                 bot.reset()
-                time.sleep(2)
-                bot.get_new_opponent()
-                # bot.rematch()
+
+                if not const.TV:
+                    time.sleep(5)
+                    bot.get_new_opponent()
+
                 break
+
+            number_half_moves = bot.get_number_of_half_moves()
+            while number_half_moves <= old_number_half_moves and number_half_moves != 1\
+                    :
+                if orientation == 'white' and number_half_moves % 2 == 1:
+                    break
+                if orientation == 'black' and number_half_moves % 2 == 0:
+                    break
+                mainlogger.warning(f'number_half_moves: {number_half_moves} not greater than old_number_half_moves: {old_number_half_moves}')
+                number_half_moves = bot.get_number_of_half_moves()
+            old_number_half_moves = number_half_moves
 
             if orientation == 'white' and number_half_moves % 2 == 0:
                 fen = bot.go_play()
@@ -95,6 +122,7 @@ with Chessbot(teardown=False) as bot:
                 mainlogger.info('############################## move ###############################')
                 mainlogger.info('###################################################################')
                 mainlogger.info(f'number_half_moves = {number_half_moves}')
+
                 fen_old = fen
 
                 fen_cmd = f'position fen {fen}'
@@ -223,6 +251,7 @@ with Chessbot(teardown=False) as bot:
                 print(f'Selected move: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} rand: {rand}')
                 mainlogger.info(f'###--- PLAY SELECTED MOVE: #: {move_nr+1}, score: {selected_score}, move: {selected_move} score_loss: {score_loss} [{score_loss_current}]---###')
 
-                bot.play_move(selected_move)
+                if not const.TV:
+                    bot.play_move(selected_move)
 
             time.sleep(0.2)

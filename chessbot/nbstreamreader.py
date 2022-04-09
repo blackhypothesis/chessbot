@@ -5,18 +5,14 @@ from queue import Queue, Empty
 class NonBlockingStreamReader:
 
     def __init__(self, stream):
-        '''
-        stream: the stream to read from.
-                Usually a process' stdout or stderr.
-        '''
+        # stream: the stream to read from.
+        #        Usually a process' stdout or stderr.
 
         self._s = stream
         self._q = Queue(maxsize=100)
 
         def _populateQueue(stream, queue):
-            '''
-            Collect lines from 'stream' and put them in 'quque'.
-            '''
+            # Collect lines from 'stream' and put them in 'queue'.
 
             while True:
                 line = stream.readline()

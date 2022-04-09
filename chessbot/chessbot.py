@@ -1,4 +1,5 @@
 import chessbot.constants as const
+import chessbot.credentials as cred
 import time
 import logging
 import os
@@ -13,7 +14,7 @@ logging.getLogger('selenium').setLevel(logging.ERROR)
 logging.getLogger('pyautogui').setLevel(logging.ERROR)
 
 logging.basicConfig(
-    filename=const.LOG_FILE,
+    filename=f'{const.LOG_FILE_PATH}/chessbot.log',
     format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
     level=logging.INFO)
 
@@ -66,14 +67,14 @@ class Chessbot(webdriver.Chrome):
             'form3-username'
         )
         username.clear()
-        username.send_keys(const.USERNAME)
+        username.send_keys(cred.USERNAME)
 
         password = self.find_element(
             By.ID,
             'form3-password'
         )
         password.clear()
-        password.send_keys(const.PASSWORD)
+        password.send_keys(cred.PASSWORD)
 
         time.sleep(1)
 
@@ -83,9 +84,9 @@ class Chessbot(webdriver.Chrome):
         )
         submit.click()
 
-    def land_first_page(self):
-        self.get(const.BASE_URL)
-        botlogger.debug(f'landing on page: {const.BASE_URL}')
+    def land_first_page(self, url):
+        self.get(url)
+        botlogger.debug(f'landing on page: {url}')
 
     def select_game(self):
         self.find_element(
@@ -456,6 +457,26 @@ class Chessbot(webdriver.Chrome):
         return self.half_moves
 
     ###############################################################################################################
+    # count half moves
+    def get_move_list(self):
+        move_list_string = 'N/A'
+        try:
+            move_list = self.find_element(
+                By.TAG_NAME,
+                'l4x'
+            ).find_elements(
+                By.TAG_NAME,
+                'u8t'
+            )
+            move_list_string = ''
+            for move in move_list:
+                move_list_string = move_list_string + move.text + ' '
+        except:
+            return ''
+
+        return move_list_string
+
+    ###############################################################################################################
     # get result of game -> then the game is finished
     def get_result(self):
         try:
@@ -551,6 +572,52 @@ class Chessbot(webdriver.Chrome):
         minutes = int(min_sec[:2])
         seconds = int(min_sec[3:5])
         return minutes * 60 + seconds
+
+    ###############################################################################################################
+    # get user names and rating
+    def get_player_names(self):
+        bottom_user_name = 'N/A'
+        bottom_user_rating = 'N/A'
+        upper_user_name = 'N/A'
+        upper_user_rating = 'N/A'
+        try:
+            bottom_user_name = self.find_element(
+                By.XPATH,
+                '//*[@id="main-wrap"]/main/div[1]/div[5]/a'
+            ).text
+        except:
+            pass
+
+        try:
+            bottom_user_rating = self.find_element(
+                By.XPATH,
+                '//*[@id="main-wrap"]/main/div[1]/div[5]/rating'
+            ).text
+        except:
+            pass
+
+        try:
+            upper_user_name = self.find_element(
+                By.XPATH,
+                '//*[@id="main-wrap"]/main/div[1]/div[4]/a'
+            ).text
+        except:
+            pass
+
+        try:
+            upper_user_rating = self.find_element(
+                By.XPATH,
+                '//*[@id="main-wrap"]/main/div[1]/div[4]/rating'
+            ).text
+        except:
+            pass
+
+        if self.orientation == 'white':
+            botlogger.info(
+                f'White: {bottom_user_name} [{bottom_user_rating}], Black: {upper_user_name} [{upper_user_rating}]')
+        else:
+            botlogger.info(
+                f'White: {upper_user_name} [{upper_user_rating}], Black: {bottom_user_name} [{bottom_user_rating}]')
 
     ###############################################################################################################
     # get external IP

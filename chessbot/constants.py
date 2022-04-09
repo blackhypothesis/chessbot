@@ -7,25 +7,29 @@ y0 = 260
 
 LICHESS_LOGIN = 'https://lichess.org/login'
 BASE_URL = 'https://lichess.org/'
+TV_URL = 'https://lichess.org/tv'
+
+# lichess tv
+TV = True
 
 STOCKFISH = '/home/marcel/bin/stockfish'
 
 # setoption name Threads value
-THREADS = 8
+THREADS = 10
 # Time Format
 TF = 1
 # go depth
 # 1 + 0 -> 16
-MAX_DEPTH = 10
+MAX_DEPTH = 16
 # playing strength
 SCORE_LOSS_MIN = 0
-SCORE_LOSS_MAX = 450
-SCORE_LOSS_INCREASE = 30
+SCORE_LOSS_MAX = 50
+SCORE_LOSS_INCREASE = 10
 BEST_MOVE_PROBABILITY = 1
 # setoption name MultiPV value
-MULTI_PV = 4
+MULTI_PV = 1
 
-LOG_FILE = f'/home/marcel/tmp/{USERNAME}.log'
+LOG_FILE_PATH = '/home/marcel/tmp'
 DEBUG = True
 
 TIME_FORMAT = ''
