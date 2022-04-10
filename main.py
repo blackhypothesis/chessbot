@@ -7,6 +7,7 @@ from chessbot.chessbot import Chessbot
 from subprocess import Popen, PIPE
 from chessbot.nbstreamreader import NonBlockingStreamReader as NBSR
 
+
 mainlogger = logging.getLogger(__name__)
 mainlogger.setLevel(logging.DEBUG)
 
@@ -136,6 +137,8 @@ with Chessbot(teardown=False) as bot:
                     p.stdin.write(f'{cmd}\n')
                     p.stdin.flush()
                     mainlogger.info(f'CMD: {cmd}')
+                    p.stdin.write('isready\n')
+                    p.stdin.flush()
 
                 multi_pv_moves = [{"depth": -1, "score": 0, "move": '-'}] * const.MULTI_PV
 

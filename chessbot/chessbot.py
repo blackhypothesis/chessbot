@@ -357,7 +357,7 @@ class Chessbot(webdriver.Chrome):
 
     ######################################################################################################
     # get the last move
-    # get the last move to determine which color has to move
+    # get the last move
     # last move piece
     def get_last_move(self):
         self.last_move_piece = ''
@@ -457,9 +457,8 @@ class Chessbot(webdriver.Chrome):
         return self.half_moves
 
     ###############################################################################################################
-    # count half moves
+    # get move list
     def get_move_list(self):
-        move_list_string = 'N/A'
         try:
             move_list = self.find_element(
                 By.TAG_NAME,
