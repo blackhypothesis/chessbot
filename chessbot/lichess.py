@@ -3,6 +3,14 @@ from selenium.webdriver.common.by import By
 import os
 import time
 import re
+import logging
+
+for m in ("selenium", "os", "trime", "re"):
+    # logging.getLogger(m).setLevel(logging.CRITICAL)
+    logging.getLogger(m).disabled = True
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class Lichess(webdriver.Chrome):
@@ -54,6 +62,7 @@ class Lichess(webdriver.Chrome):
         self.get_board_position()
         self.get_board_size()
         self.get_game_state()
+        logger.info('new game')
 
     ###############################################################################################################
     # open web page
@@ -85,7 +94,9 @@ class Lichess(webdriver.Chrome):
                 '//*[@id="main-wrap"]/main/form/div[1]/button'
             )
             submit.click()
+            logger.info('login successful, user: {login}')
         except:
+            logger.error(f'cannot login: user: {login}')
             print('ERROR: cannot login')
 
     ###############################################################################################################
@@ -124,8 +135,10 @@ class Lichess(webdriver.Chrome):
                 self.state['board_orientation'] = 'black'
             else:
                 self.state['board_orientation'] = 'white'
+            logger.info('board_orientation: ' + self.state['board_orientation'])
         except:
-            print('ERROR: cannot get board board_orientation')
+            logger.error('cannot get board orientation')
+            print('ERROR: cannot get board board orientation')
 
     ###############################################################################################################
     # board absolute position on screen. this cannot be determined precisely, but enough
@@ -148,9 +161,13 @@ class Lichess(webdriver.Chrome):
                 "return window.screenY + (window.outerHeight - window.innerHeight) - window.scrollY;")
             self.state['board_position']['x'] = canvas_x_offset + location_x
             self.state['board_position']['y'] = canvas_y_offset + location_y
+            x = self.state['board_position']['x']
+            y = self.state['board_position']['y']
+            logger.debug(f'board_positioin: x={x}, y={y}')
+            return self.state['board_position']['x'], self.state['board_position']['y']
         except:
+            logger.error('cannot get board position')
             print('ERROR: cannot get board position')
-        return self.state['board_position']['x'], self.state['board_position']['y']
 
     ###############################################################################################################
     # get board size
@@ -163,7 +180,9 @@ class Lichess(webdriver.Chrome):
 
             self.state['board_size']['x'] = board.size['width']
             self.state['board_size']['y'] = board.size['height']
+            logger.debug('board_size: ' + str(self.state['board_size']['x']) + ', ' + str(self.state['board_size']['y']))
         except:
+            logger.debug('cannot get board size')
             print('Board not available.')
         return self.state['board_size']['x'], self.state['board_size']['y']
 
@@ -210,6 +229,7 @@ class Lichess(webdriver.Chrome):
 
             square_x, square_y = self.get_piece_coordinates(piece_coordinates, self.state['board_size'])
             self.board[square_x - 1][square_y - 1] = piece
+            logger.debug(f'board: piece="{piece}", x={square_x}, y={square_y}, ' + chr(square_x + 96) + str(square_y))
 
     ###############################################################################################################
     # calculate the coorindates of a piece according to the size and board_orientation of the board
@@ -295,6 +315,7 @@ class Lichess(webdriver.Chrome):
         move_count = int(self.state['half_moves'] / 2) + 1
         self.state['fen'] += f' {active_color} {castling_right} - 0 {move_count}'
 
+        logger.info('fen: ' + self.state['fen'])
         return self.state['fen']
 
     ###############################################################################################################
