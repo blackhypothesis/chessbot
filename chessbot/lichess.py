@@ -3,14 +3,15 @@ from selenium.webdriver.common.by import By
 import os
 import time
 import re
+import pyautogui
 import logging
 
-for m in ("selenium", "os", "trime", "re"):
+for m in ("selenium", "os", "time", "re", "pyautogui"):
     # logging.getLogger(m).setLevel(logging.CRITICAL)
     logging.getLogger(m).disabled = True
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Lichess(webdriver.Chrome):
@@ -35,6 +36,8 @@ class Lichess(webdriver.Chrome):
             "last_move_piece": "",
             # count half moves
             "half_moves": 0,
+            #
+            "last_half_moves_checked": 1,
             # status castling right
             # if a pieces has already moved and the moved back to the origin square, the castling right
             # fen string
@@ -58,16 +61,20 @@ class Lichess(webdriver.Chrome):
     # get information about the board board_orientation, position, size
     # get also the web element cg_board
     def new_game(self):
-        self.get_board_board_orientation()
+        self.get_board_orientation()
         self.get_board_position()
         self.get_board_size()
-        self.get_game_state()
+        # self.get_game_state()
+        self.state['last_half_moves_checked'] = -1
+        self.state['status_castling_right'] = 'KQkq'
         logger.info('new game')
 
     ###############################################################################################################
     # open web page
     def open_page(self, url: str):
         self.get(url)
+        self.set_window_size(1000, 900, 'current')
+        self.set_window_position(10, 10, 'current')
 
     ###############################################################################################################
     # login with username and password
@@ -124,7 +131,7 @@ class Lichess(webdriver.Chrome):
     # board board_orientation
     #   white: white is on bottom, bot plays white
     #   black: black is on bottom, bot plays black
-    def get_board_board_orientation(self):
+    def get_board_orientation(self):
         try:
             coords = self.find_element(
                 By.TAG_NAME,
@@ -136,6 +143,7 @@ class Lichess(webdriver.Chrome):
             else:
                 self.state['board_orientation'] = 'white'
             logger.info('board_orientation: ' + self.state['board_orientation'])
+            return self.state['board_orientation']
         except:
             logger.error('cannot get board orientation')
             print('ERROR: cannot get board board orientation')
@@ -229,7 +237,8 @@ class Lichess(webdriver.Chrome):
 
             square_x, square_y = self.get_piece_coordinates(piece_coordinates, self.state['board_size'])
             self.board[square_x - 1][square_y - 1] = piece
-            logger.debug(f'board: piece="{piece}", x={square_x}, y={square_y}, ' + chr(square_x + 96) + str(square_y))
+            # logger.debug(f'board: piece="{piece}", x={square_x}, y={square_y}, ' + chr(square_x + 96) + str(square_y))
+        logger.debug('got board position')
 
     ###############################################################################################################
     # calculate the coorindates of a piece according to the size and board_orientation of the board
@@ -312,6 +321,8 @@ class Lichess(webdriver.Chrome):
             castling_right = '-'
         self.state['status_castling_right'] = castling_right
 
+        # to do: en passant
+
         move_count = int(self.state['half_moves'] / 2) + 1
         self.state['fen'] += f' {active_color} {castling_right} - 0 {move_count}'
 
@@ -321,6 +332,7 @@ class Lichess(webdriver.Chrome):
     ###############################################################################################################
     # count half moves
     def get_number_of_half_moves(self):
+        self.implicitly_wait(0.5)
         try:
             move_list = self.find_element(
                 By.TAG_NAME,
@@ -330,10 +342,24 @@ class Lichess(webdriver.Chrome):
                 'u8t'
             )
             self.state['half_moves'] = len(move_list)
+            self.implicitly_wait(3)
         except:
-            print('ERROR: cannot get number of half moves')
+            self.state['half_moves'] = 0
+            self.implicitly_wait(3)
 
         return self.state['half_moves']
+
+    ###############################################################################################################
+    # check if there was a new move played.
+    # this is to inform the chessbot, if it is necessary to get the new fen
+    def is_new_move(self) :
+        self.get_number_of_half_moves()
+        if self.state['half_moves'] > self.state['last_half_moves_checked']:
+            logger.debug('half_moves: ' + str(self.state['half_moves']) + ', last_half_moves_checked: ' + str(self.state['last_half_moves_checked']))
+            self.state['last_half_moves_checked'] = self.state['half_moves']
+            return True
+        else:
+            return False
 
     ###############################################################################################################
     # get move list
@@ -346,11 +372,13 @@ class Lichess(webdriver.Chrome):
                 By.TAG_NAME,
                 'u8t'
             )
-            move_list = []
+            move_list = ''
             for move in moves:
-                move_list.append(move.text)
+                move_list = move_list + move.text + ' '
+            logger.debug(f'move_list: {move_list}')
             return move_list
         except:
+            logger.error('cannot get move_list')
             print('ERROR: cannot get move list')
 
 
@@ -383,7 +411,6 @@ class Lichess(webdriver.Chrome):
     ###############################################################################################################
     # get user names and rating
     def get_player_names(self):
-        self.get_board_board_orientation()
         bottom_user_name = 'N/A'
         bottom_user_rating = 'N/A'
         upper_user_name = 'N/A'
@@ -418,11 +445,14 @@ class Lichess(webdriver.Chrome):
                 '//*[@id="main-wrap"]/main/div[1]/div[4]/rating'
             ).text
         except:
+            logger.error('cannot get player names and rating')
             pass
 
         if self.state['board_orientation'] == 'white':
+            logger.debug(f'"white": [{bottom_user_name}, {bottom_user_rating}], "black": [{upper_user_name}, {upper_user_rating}]')
             return { "white": [bottom_user_name, bottom_user_rating], "black": [upper_user_name, upper_user_rating]}
         else:
+            logger.debug(f'"white": [{upper_user_name}, {upper_user_rating}], "black": [{bottom_user_name}, {bottom_user_rating}]')
             return { "white": [upper_user_name, upper_user_rating], "black": [bottom_user_name, bottom_user_rating]}
 
     ###############################################################################################################
@@ -434,8 +464,10 @@ class Lichess(webdriver.Chrome):
                 'ricons'
             )
             self.state['game_state'] = 'running'
+            logger.debug('game_state: ' + str(self.state['game_state']))
         except:
             self.state['game_state'] = 'finished'
+            logger.debug('game_state: ' + str(self.state['game_state']))
 
         return self.state['game_state']
 
@@ -448,5 +480,33 @@ class Lichess(webdriver.Chrome):
                 '//*[@id="main-wrap"]/main/div[1]/div[5]/div/a[1]'
             )
             new_opponent.click()
+            logger.debug('clicking on NEW OPPONENT')
         except:
             print('ERROR: cannot get new opponent')
+
+    ###############################################################################################################
+    # play move
+    def play_move(self, bm):
+        x1 = ord(bm[:1]) - 96 - 1
+        y1 = int(bm[1:2]) - 1
+        x2 = ord(bm[2:3]) - 96 - 1
+        y2 = int(bm[3:4]) - 1
+
+        if self.state['board_orientation'] == 'black':
+            x1 = 7 - x1
+            y1 = 7 - y1
+            x2 = 7 - x2
+            y2 = 7 - y2
+
+        self.mouse_move(x1, y1)
+        pyautogui.click()
+        self.mouse_move(x2, y2)
+        pyautogui.click()
+        logger.debug(f'move: [{x1} {y1}], [{x2} {y2}]')
+
+    def mouse_move(self, cx, cy):
+        x_pos = cx * (self.state['board_size']['x'] / 8) + self.state['board_size']['x'] / 24 + self.state['board_position']['x']
+        y_pos = (7 - cy) * (self.state['board_size']['y'] / 8) + self.state['board_size']['y'] / 24 + self.state['board_position']['y']
+
+        logger.debug(f'x_pos: {x_pos}, y_pos: {y_pos}')
+        pyautogui.moveTo(x_pos, y_pos)
