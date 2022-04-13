@@ -13,11 +13,16 @@ logging.basicConfig(
     level=logging.INFO)
 
 
-stockfish = Stockfish(path="/home/tluluma3/bin/stockfish")
+stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=16)
+
 lc = Lichess()
-lc.open_page('https://lichess.org/')
+lc.get_external_ip()
+time.sleep(1)
+lc.open_page('https://lichess.org/login')
 # wait, to load page
 time.sleep(1)
+lc.login('login', 'pwd')
+time.sleep(3)
 lc.select_timeformat('1+0')
 
 while True:
@@ -27,7 +32,7 @@ while True:
     while True:
         game_state = lc.get_game_state()
         if game_state == 'finished':
-            # lc.get_player_names()
+            lc.get_player_names()
             move_list = lc.get_move_list()
             main_logger.info(f'Movelist: {move_list}')
             lc.get_new_opponent()

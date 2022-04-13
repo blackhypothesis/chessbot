@@ -61,24 +61,27 @@ class Lichess(webdriver.Chrome):
     # get information about the board board_orientation, position, size
     # get also the web element cg_board
     def new_game(self):
+        self.implicitly_wait(15)
         self.get_board_orientation()
         self.get_board_position()
         self.get_board_size()
+        self.cg_board_element()
         # self.get_game_state()
         self.state['last_half_moves_checked'] = -1
         self.state['status_castling_right'] = 'KQkq'
+        self.implicitly_wait(3)
         logger.info('new game')
 
     ###############################################################################################################
     # open web page
     def open_page(self, url: str):
         self.get(url)
-        self.set_window_size(1000, 900, 'current')
+        self.set_window_size(1400, 1100, 'current')
         self.set_window_position(10, 10, 'current')
 
     ###############################################################################################################
     # login with username and password
-    def login(self, login: str, password: str):
+    def login(self, login: str, pwd: str):
         try:
             username = self.find_element(
                 By.ID,
@@ -92,7 +95,7 @@ class Lichess(webdriver.Chrome):
                 'form3-password'
             )
             password.clear()
-            password.send_keys(password)
+            password.send_keys(pwd)
 
             time.sleep(1)
 
@@ -211,7 +214,7 @@ class Lichess(webdriver.Chrome):
     # get the position of each piece and populate the squares of the board
     # get list of all pieces on the board
     def get_position_of_pieces(self):
-        self.cg_board_element()
+        # self.cg_board_element()
         # first, clear board
         for x in range(8):
             for y in range(8):
@@ -375,7 +378,7 @@ class Lichess(webdriver.Chrome):
             move_list = ''
             for move in moves:
                 move_list = move_list + move.text + ' '
-            logger.debug(f'move_list: {move_list}')
+            logger.info(f'move_list: {move_list}')
             return move_list
         except:
             logger.error('cannot get move_list')
@@ -449,10 +452,10 @@ class Lichess(webdriver.Chrome):
             pass
 
         if self.state['board_orientation'] == 'white':
-            logger.debug(f'"white": [{bottom_user_name}, {bottom_user_rating}], "black": [{upper_user_name}, {upper_user_rating}]')
+            logger.info(f'"white": [{bottom_user_name}, {bottom_user_rating}], "black": [{upper_user_name}, {upper_user_rating}]')
             return { "white": [bottom_user_name, bottom_user_rating], "black": [upper_user_name, upper_user_rating]}
         else:
-            logger.debug(f'"white": [{upper_user_name}, {upper_user_rating}], "black": [{bottom_user_name}, {bottom_user_rating}]')
+            logger.info(f'"white": [{upper_user_name}, {upper_user_rating}], "black": [{bottom_user_name}, {bottom_user_rating}]')
             return { "white": [upper_user_name, upper_user_rating], "black": [bottom_user_name, bottom_user_rating]}
 
     ###############################################################################################################
@@ -467,7 +470,7 @@ class Lichess(webdriver.Chrome):
             logger.debug('game_state: ' + str(self.state['game_state']))
         except:
             self.state['game_state'] = 'finished'
-            logger.debug('game_state: ' + str(self.state['game_state']))
+            logger.info('game_state: ' + str(self.state['game_state']))
 
         return self.state['game_state']
 
@@ -480,7 +483,7 @@ class Lichess(webdriver.Chrome):
                 '//*[@id="main-wrap"]/main/div[1]/div[5]/div/a[1]'
             )
             new_opponent.click()
-            logger.debug('clicking on NEW OPPONENT')
+            logger.info('clicking on NEW OPPONENT')
         except:
             print('ERROR: cannot get new opponent')
 
@@ -510,3 +513,11 @@ class Lichess(webdriver.Chrome):
 
         logger.debug(f'x_pos: {x_pos}, y_pos: {y_pos}')
         pyautogui.moveTo(x_pos, y_pos)
+
+    ###############################################################################################################
+    # get external IP
+    def get_external_ip(self):
+        self.get("https://myexternalip.com/")
+        ext_ip = self.find_element(By.ID, 'ip').text
+        logger.info(f'External IP: {ext_ip}')
+        return ext_ip
