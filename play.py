@@ -33,8 +33,7 @@ while True:
         game_state = lc.get_game_state()
         if game_state == 'finished':
             lc.get_player_names()
-            move_list = lc.get_move_list()
-            main_logger.info(f'Movelist: {move_list}')
+            lc.get_move_list()
             lc.get_new_opponent()
             break
 
@@ -49,7 +48,7 @@ while True:
                     try:
                         fen = lc.get_fen()
                         stockfish.set_fen_position(fen)
-                        best_move = stockfish.get_best_move()[:4]
+                        best_move = stockfish.get_best_move()
                         lc.play_move(best_move)
                         break
                     except BaseException as e:

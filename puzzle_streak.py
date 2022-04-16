@@ -24,26 +24,33 @@ lc.toggle_puzzle_autonext()
 
 while True:
     lc.new_game()
+    board_orientation = lc.get_board_orientation()
+    depth = int(lc.get_puzzle_elo() / 100) - 2
+    stockfish.set_depth(depth)
+    main_logger.info(f'set depth: {depth}')
+
     while True:
-        time.sleep(0.5)
         puzzle_state = lc.get_puzzle_state()
         if puzzle_state == 'finished':
-            main_logger.debug('wait ...')
-            time.sleep(0.5)
+            time.sleep(0.3)
             lc.puzzle_continue()
+            time.sleep(0.7)
             break
-        else:
-            while True:
-                try:
-                    fen = lc.get_fen()
-                    stockfish.set_fen_position(fen)
-                    best_move = stockfish.get_best_move()
-                    main_logger.info(f'Best Move: {best_move}')
-                    lc.play_move(best_move)
-                    time.sleep(0.5)
-                    break
-                except BaseException as e:
-                    print(e)
-                    continue
+
+        if lc.is_new_move():
+            half_moves = lc.get_number_of_half_moves()
+
+            if board_orientation == 'white' and half_moves % 2 == 0 or board_orientation == 'black' and half_moves % 2 == 1:
+                while True:
+                    try:
+                        fen = lc.get_fen()
+                        stockfish.set_fen_position(fen)
+                        best_move = stockfish.get_best_move()
+                        main_logger.info(f'Best Move: {best_move}')
+                        lc.play_move(best_move)
+                        break
+                    except BaseException as e:
+                        print(e)
+                        continue
 
 

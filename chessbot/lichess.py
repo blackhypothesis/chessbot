@@ -11,7 +11,7 @@ for m in ("selenium", "os", "time", "re", "pyautogui"):
     logging.getLogger(m).disabled = True
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Lichess(webdriver.Chrome):
@@ -368,12 +368,9 @@ class Lichess(webdriver.Chrome):
                 move_list = self.find_element(
                     By.XPATH,
                     '//*[@id="main-wrap"]/main/div[2]/div[2]/div'
-                ).find_elements(
-                    By.CLASS_NAME,
-                    'hist'
-                )
+                ).find_elements(By.TAG_NAME, 'move')
                 # last move has class name 'current active', therefore add 1 half move
-                self.state['half_moves'] = len(move_list) + 1
+                self.state['half_moves'] = len(move_list)
             except:
                 self.state['half_moves'] = 0
 
@@ -587,6 +584,11 @@ class Lichess(webdriver.Chrome):
     # Puzzle Streak: continue button
     def puzzle_continue(self):
         self.cont.click()
+
+    def get_puzzle_elo(self):
+        elo = self.find_element(By.TAG_NAME, 'strong').text
+        logger.info(f'puzzle elo: {elo}')
+        return int(elo)
 
     ###############################################################################################################
     # get external IP
