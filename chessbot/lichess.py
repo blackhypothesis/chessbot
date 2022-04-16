@@ -11,7 +11,7 @@ for m in ("selenium", "os", "time", "re", "pyautogui"):
     logging.getLogger(m).disabled = True
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Lichess(webdriver.Chrome):
@@ -23,6 +23,8 @@ class Lichess(webdriver.Chrome):
         self.implicitly_wait(3)
 
         self.state = {
+            # modus: play or puzzle
+            "modus": "play",
             # board_orientation: white -> white is on bottom
             #              black -> black is on bottom
             "board_orientation": "white",
@@ -45,16 +47,27 @@ class Lichess(webdriver.Chrome):
             # castling rights
             "status_castling_right":"KQkq",
             # game state
-            "game_state": "finished"
+            "game_state": "finished",
+            # puzzle state
+            "puzzle_state": "finished"
         }
         # cg_board, this is the element, containing the pieces and last move information
         self.cg_board = None
         # board representation
         self.board = [['empty field'] * 8 for _ in range(8)]
+        # Puzzle Streak: continue button
+        self.cont = None
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.teardown:
             self.quit()
+
+    ###############################################################################################################
+    # set modus
+    def set_modus(self, modus: str):
+        if modus != 'play' and modus != 'puzzle':
+            raise 'modus has to be "play" or "puzzle"'
+        self.state['modus'] = modus
 
     ###############################################################################################################
     # new game
@@ -185,8 +198,8 @@ class Lichess(webdriver.Chrome):
     def get_board_size(self):
         try:
             board = self.find_element(
-                By.XPATH,
-                '//*[@id="main-wrap"]/main/div[1]/div[1]/div/cg-container'
+                By.TAG_NAME,
+                'cg-container'
             )
 
             self.state['board_size']['x'] = board.size['width']
@@ -336,20 +349,36 @@ class Lichess(webdriver.Chrome):
     # count half moves
     def get_number_of_half_moves(self):
         self.implicitly_wait(0.5)
-        try:
-            move_list = self.find_element(
-                By.TAG_NAME,
-                'l4x'
-            ).find_elements(
-                By.TAG_NAME,
-                'u8t'
-            )
-            self.state['half_moves'] = len(move_list)
-            self.implicitly_wait(3)
-        except:
-            self.state['half_moves'] = 0
-            self.implicitly_wait(3)
 
+        if self.state['modus'] == 'play':
+            try:
+                move_list = self.find_element(
+                    By.TAG_NAME,
+                    'l4x'
+                ).find_elements(
+                    By.TAG_NAME,
+                    'u8t'
+                )
+                self.state['half_moves'] = len(move_list)
+            except:
+                self.state['half_moves'] = 0
+
+        else:
+            try:
+                move_list = self.find_element(
+                    By.XPATH,
+                    '//*[@id="main-wrap"]/main/div[2]/div[2]/div'
+                ).find_elements(
+                    By.CLASS_NAME,
+                    'hist'
+                )
+                # last move has class name 'current active', therefore add 1 half move
+                self.state['half_moves'] = len(move_list) + 1
+            except:
+                self.state['half_moves'] = 0
+
+        logger.debug(('half_moves: ' + str(self.state['half_moves'])))
+        self.implicitly_wait(3)
         return self.state['half_moves']
 
     ###############################################################################################################
@@ -418,6 +447,7 @@ class Lichess(webdriver.Chrome):
         bottom_user_rating = 'N/A'
         upper_user_name = 'N/A'
         upper_user_rating = 'N/A'
+        self.implicitly_wait(0.1)
         try:
             bottom_user_name = self.find_element(
                 By.XPATH,
@@ -451,6 +481,7 @@ class Lichess(webdriver.Chrome):
             logger.error('cannot get player names and rating')
             pass
 
+        self.implicitly_wait(3)
         if self.state['board_orientation'] == 'white':
             logger.info(f'"white": [{bottom_user_name}, {bottom_user_rating}], "black": [{upper_user_name}, {upper_user_rating}]')
             return { "white": [bottom_user_name, bottom_user_rating], "black": [upper_user_name, upper_user_rating]}
@@ -475,6 +506,20 @@ class Lichess(webdriver.Chrome):
         return self.state['game_state']
 
     ###############################################################################################################
+    # Puzzle Streak: continue button
+    def get_puzzle_state(self):
+        self.implicitly_wait(0.2)
+        try:
+            self.cont = self.find_element(By.CLASS_NAME, 'continue')
+            self.state['puzzle_state'] = 'finished'
+            logger.info('puzzle_state: ' + str(self.state['puzzle_state']))
+        except:
+            self.state['puzzle_state'] = 'running'
+            logger.debug('puzzle_state: ' + str(self.state['puzzle_state']))
+        self.implicitly_wait(3)
+        return self.state['puzzle_state']
+
+    ###############################################################################################################
     # get new opponent
     def get_new_opponent(self):
         try:
@@ -488,12 +533,19 @@ class Lichess(webdriver.Chrome):
             print('ERROR: cannot get new opponent')
 
     ###############################################################################################################
+    # toggle puzzle auto next button
+    def toggle_puzzle_autonext(self):
+        toggle = self.find_element(By.CSS_SELECTOR, 'label[for="puzzle-toggle-autonext"]')
+        toggle.click()
+
+    ###############################################################################################################
     # play move
-    def play_move(self, bm):
-        x1 = ord(bm[:1]) - 96 - 1
-        y1 = int(bm[1:2]) - 1
-        x2 = ord(bm[2:3]) - 96 - 1
-        y2 = int(bm[3:4]) - 1
+    def play_move(self, move):
+        x1 = ord(move[:1]) - 96 - 1
+        y1 = int(move[1:2]) - 1
+        x2 = ord(move[2:3]) - 96 - 1
+        y2 = int(move[3:4]) - 1
+        promote = move[4:5]
 
         if self.state['board_orientation'] == 'black':
             x1 = 7 - x1
@@ -505,7 +557,24 @@ class Lichess(webdriver.Chrome):
         pyautogui.click()
         self.mouse_move(x2, y2)
         pyautogui.click()
-        logger.debug(f'move: [{x1} {y1}], [{x2} {y2}]')
+        logger.debug(f'move: {move}, [{x1} {y1}], [{x2} {y2}]')
+
+        # pawn promotion
+        if promote != '':
+            logger.debug(f'pawn promotion: {promote} ')
+            time.sleep(0.2)
+            if promote == 'q':
+                self.mouse_move(x2, 7)
+                pyautogui.click()
+            elif promote == 'n':
+                self.mouse_move(x2, 6)
+                pyautogui.click()
+            elif promote == 'r':
+                self.mouse_move(x2, 5)
+                pyautogui.click()
+            elif promote == 'b':
+                self.mouse_move(x2, 4)
+                pyautogui.click()
 
     def mouse_move(self, cx, cy):
         x_pos = cx * (self.state['board_size']['x'] / 8) + self.state['board_size']['x'] / 24 + self.state['board_position']['x']
@@ -513,6 +582,11 @@ class Lichess(webdriver.Chrome):
 
         logger.debug(f'x_pos: {x_pos}, y_pos: {y_pos}')
         pyautogui.moveTo(x_pos, y_pos)
+
+    ###############################################################################################################
+    # Puzzle Streak: continue button
+    def puzzle_continue(self):
+        self.cont.click()
 
     ###############################################################################################################
     # get external IP

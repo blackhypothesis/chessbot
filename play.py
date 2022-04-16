@@ -13,15 +13,15 @@ logging.basicConfig(
     level=logging.INFO)
 
 
-stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=16)
+stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=17, parameters={"Threads": 8})
 
 lc = Lichess()
-lc.get_external_ip()
+# lc.get_external_ip()
 time.sleep(1)
-lc.open_page('https://lichess.org/login')
+lc.open_page('https://lichess.org/')
 # wait, to load page
 time.sleep(1)
-lc.login('login', 'pwd')
+# lc.login('login', 'pwd')
 time.sleep(3)
 lc.select_timeformat('1+0')
 
@@ -40,6 +40,9 @@ while True:
 
         if lc.is_new_move():
             half_moves = lc.get_number_of_half_moves()
+
+            # if half_moves < 12:
+            #     continue
 
             if board_orientation == 'white' and half_moves % 2 == 0 or board_orientation == 'black' and half_moves %2 == 1:
                 while True:
