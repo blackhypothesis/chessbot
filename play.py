@@ -26,8 +26,7 @@ time.sleep(3)
 lc.select_timeformat('1+0')
 
 while True:
-    lc.new_game()
-    board_orientation = lc.get_board_orientation()
+    board_orientation = lc.new_game()
 
     while True:
         game_state = lc.get_game_state()

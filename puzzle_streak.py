@@ -13,10 +13,11 @@ logging.basicConfig(
     level=logging.INFO)
 
 
-stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=20, parameters={"Threads": 8})
+stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=18, parameters={"Threads": 8})
 
 lc = Lichess()
 lc.open_page('https://lichess.org/streak')
+
 # wait, to load page
 time.sleep(1)
 lc.set_modus('puzzle')
@@ -25,16 +26,15 @@ lc.toggle_puzzle_autonext()
 while True:
     lc.new_game()
     board_orientation = lc.get_board_orientation()
-    depth = int(lc.get_puzzle_elo() / 100) - 2
-    stockfish.set_depth(depth)
+    depth = int(lc.get_puzzle_elo() / 100) + 1
     main_logger.info(f'set depth: {depth}')
 
     while True:
         puzzle_state = lc.get_puzzle_state()
         if puzzle_state == 'finished':
-            time.sleep(0.3)
+            time.sleep(0.2)
             lc.puzzle_continue()
-            time.sleep(0.7)
+            time.sleep(1.5)
             break
 
         if lc.is_new_move():
@@ -43,6 +43,12 @@ while True:
             if board_orientation == 'white' and half_moves % 2 == 0 or board_orientation == 'black' and half_moves % 2 == 1:
                 while True:
                     try:
+                        stockfish.set_depth(depth)
+                        main_logger.info(f'set depth: {depth}')
+                        depth = depth - 1
+                        if depth < 8:
+                            depth = 8
+                        time.sleep(0.3)
                         fen = lc.get_fen()
                         stockfish.set_fen_position(fen)
                         best_move = stockfish.get_best_move()

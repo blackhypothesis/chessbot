@@ -52,9 +52,10 @@ class Lichess(webdriver.Chrome):
             "puzzle_state": "finished"
         }
         # cg_board, this is the element, containing the pieces and last move information
-        self.cg_board = None
-        # board representation
+        self.chessboard_element = None
+        # board representation, board_1 is used to store the half move before, to check en passant
         self.board = [['empty field'] * 8 for _ in range(8)]
+        self.board_1 = [['empty field'] * 8 for _ in range(8)]
         # Puzzle Streak: continue button
         self.cont = None
 
@@ -75,21 +76,22 @@ class Lichess(webdriver.Chrome):
     # get also the web element cg_board
     def new_game(self):
         self.implicitly_wait(15)
-        self.get_board_orientation()
+        board_orientation = self.get_board_orientation()
         self.get_board_position()
         self.get_board_size()
-        self.cg_board_element()
+        self.get_chessboard_element()
         # self.get_game_state()
         self.state['last_half_moves_checked'] = -1
         self.state['status_castling_right'] = 'KQkq'
         self.implicitly_wait(3)
         logger.info('new game')
+        return board_orientation
 
     ###############################################################################################################
     # open web page
     def open_page(self, url: str):
         self.get(url)
-        self.set_window_size(1400, 1100, 'current')
+        self.set_window_size(1400, 900, 'current')
         self.set_window_position(10, 10, 'current')
 
     ###############################################################################################################
@@ -213,27 +215,34 @@ class Lichess(webdriver.Chrome):
     ###############################################################################################################
     # cg_board
     # this element contains information about the last move and all pieces on the board
-    def cg_board_element(self):
+    def get_chessboard_element(self):
         try:
-            self.cg_board = self.find_element(
+            self.chessboard_element = self.find_element(
                 By.TAG_NAME,
                 'cg-board'
             )
         except:
-            self.cg_board = None
+            self.chessboard_element = None
             print('ERROR: cannot get web element cg_board')
+
+    ######################################################################################################
+    # copy chessboard
+    def copy_board(self):
+        for x in range(8):
+            for y in range(8):
+                self.board_1[x][y] = self.board[x][y]
 
     ######################################################################################################
     # get the position of each piece and populate the squares of the board
     # get list of all pieces on the board
     def get_position_of_pieces(self):
-        # self.cg_board_element()
-        # first, clear board
+        # first, copy and clear board
+        self.copy_board()
         for x in range(8):
             for y in range(8):
                 self.board[x][y] = 'empty field'
 
-        squares = self.cg_board.find_elements(
+        squares = self.chessboard_element.find_elements(
             By.TAG_NAME,
             'piece'
         )
@@ -283,6 +292,7 @@ class Lichess(webdriver.Chrome):
         self.get_position_of_pieces()
         active_color = self.get_active_color()[:1]
         space = 0
+        en_passant = '-'
         self.state['fen'] = ''
 
         for y in reversed(range(8)):
@@ -337,10 +347,20 @@ class Lichess(webdriver.Chrome):
             castling_right = '-'
         self.state['status_castling_right'] = castling_right
 
-        # to do: en passant
+        # en passant
+        if active_color == 'b':
+            for x in range(8):
+                if self.board_1[x][1] == 'white pawn' and self.board_1[x][3] == 'empty field' and self.board[x][1] == 'empty field' and self.board[x][3] == 'white pawn':
+                    en_passant = chr(x + 97) + '3'
+                    break
+        elif active_color == 'w':
+            for x in range(8):
+                if self.board_1[x][6] == 'black pawn' and self.board_1[x][4] == 'empty field' and self.board[x][6] == 'empty field' and self.board[x][4] == 'black pawn':
+                    en_passant = chr(x + 97) + '6'
+
 
         move_count = int(self.state['half_moves'] / 2) + 1
-        self.state['fen'] += f' {active_color} {castling_right} - 0 {move_count}'
+        self.state['fen'] += f' {active_color} {castling_right} {en_passant} 0 {move_count}'
 
         logger.info('fen: ' + self.state['fen'])
         return self.state['fen']
