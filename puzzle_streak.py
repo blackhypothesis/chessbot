@@ -24,15 +24,14 @@ lc.set_modus('puzzle')
 lc.toggle_puzzle_autonext()
 
 while True:
-    lc.new_game()
-    board_orientation = lc.get_board_orientation()
-    depth = int(lc.get_puzzle_elo() / 100) + 1
-    main_logger.info(f'set depth: {depth}')
+    board_orientation = lc.new_game()
+    depth = int(lc.get_puzzle_elo() / 100) + 2
 
     while True:
         puzzle_state = lc.get_puzzle_state()
         if puzzle_state == 'finished':
             time.sleep(0.2)
+            lc.get_puzzle_streak_score()
             lc.puzzle_continue()
             time.sleep(1.5)
             break
@@ -45,7 +44,7 @@ while True:
                     try:
                         stockfish.set_depth(depth)
                         main_logger.info(f'set depth: {depth}')
-                        depth = depth - 1
+                        depth = depth - 2
                         if depth < 8:
                             depth = 8
                         time.sleep(0.3)

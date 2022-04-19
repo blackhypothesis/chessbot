@@ -75,7 +75,7 @@ class Lichess(webdriver.Chrome):
     # get information about the board board_orientation, position, size
     # get also the web element cg_board
     def new_game(self):
-        self.implicitly_wait(15)
+        self.implicitly_wait(90)
         board_orientation = self.get_board_orientation()
         self.get_board_position()
         self.get_board_size()
@@ -523,20 +523,6 @@ class Lichess(webdriver.Chrome):
         return self.state['game_state']
 
     ###############################################################################################################
-    # Puzzle Streak: continue button
-    def get_puzzle_state(self):
-        self.implicitly_wait(0.2)
-        try:
-            self.cont = self.find_element(By.CLASS_NAME, 'continue')
-            self.state['puzzle_state'] = 'finished'
-            logger.info('puzzle_state: ' + str(self.state['puzzle_state']))
-        except:
-            self.state['puzzle_state'] = 'running'
-            logger.debug('puzzle_state: ' + str(self.state['puzzle_state']))
-        self.implicitly_wait(3)
-        return self.state['puzzle_state']
-
-    ###############################################################################################################
     # get new opponent
     def get_new_opponent(self):
         try:
@@ -601,14 +587,31 @@ class Lichess(webdriver.Chrome):
         pyautogui.moveTo(x_pos, y_pos)
 
     ###############################################################################################################
-    # Puzzle Streak: continue button
+    # Puzzle Streak
+    def get_puzzle_state(self):
+        self.implicitly_wait(0.2)
+        try:
+            self.cont = self.find_element(By.CLASS_NAME, 'continue')
+            self.state['puzzle_state'] = 'finished'
+            logger.info('puzzle_state: ' + str(self.state['puzzle_state']))
+        except:
+            self.state['puzzle_state'] = 'running'
+            logger.debug('puzzle_state: ' + str(self.state['puzzle_state']))
+        self.implicitly_wait(3)
+        return self.state['puzzle_state']
+
     def puzzle_continue(self):
         self.cont.click()
 
     def get_puzzle_elo(self):
         elo = self.find_element(By.TAG_NAME, 'strong').text
-        logger.info(f'puzzle elo: {elo}')
+        logger.info(f'puzzle streak elo: {elo}')
         return int(elo)
+
+    def get_puzzle_streak_score(self):
+        score = self.find_element(By.CLASS_NAME, 'puzzle__side__streak__score').text
+        logger.info(f'puzzle streak score: {score}')
+        return int(score)
 
     ###############################################################################################################
     # get external IP

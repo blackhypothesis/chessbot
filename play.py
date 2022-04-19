@@ -16,12 +16,12 @@ logging.basicConfig(
 stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=17, parameters={"Threads": 8})
 
 lc = Lichess()
-# lc.get_external_ip()
+lc.get_external_ip()
 time.sleep(1)
 lc.open_page('https://lichess.org/')
 # wait, to load page
-time.sleep(1)
-# lc.login('login', 'pwd')
+time.sleep(3)
+# lc.login('login', 'passwd')
 time.sleep(3)
 lc.select_timeformat('1+0')
 
