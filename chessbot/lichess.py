@@ -91,8 +91,9 @@ class Lichess(webdriver.Chrome):
     # open web page
     def open_page(self, url: str):
         self.get(url)
-        self.set_window_size(1400, 900, 'current')
-        self.set_window_position(10, 10, 'current')
+        self.set_window_size(1600, 1200, 'current')
+        self.set_window_position(500, 10, 'current')
+        # self.maximize_window()
 
     ###############################################################################################################
     # login with username and password
@@ -144,6 +145,23 @@ class Lichess(webdriver.Chrome):
             ).click()
         except:
             print(f'ERROR: cannot choose timeformat: {timeformat}')
+
+    def select_play_computer(self):
+        try:
+            self.find_element(
+                By.XPATH,
+                '/html/body/div/main/div[1]/div[2]/a[3]'
+            ).click()
+            self.find_element(
+                By.XPATH,
+                '/html/body/div[1]/main/div[1]/div[3]/div/div/div/div[3]/div[1]/group/div[7]/label'
+            ).click()
+            self.find_element(
+                By.XPATH,
+                '/html/body/div[1]/main/div[1]/div[3]/div/div/div/div[4]/button[2]'
+            ).click()
+        except:
+            print(f'ERROR: cannot choose play against computer')
 
     ###############################################################################################################
     # board board_orientation
@@ -585,6 +603,14 @@ class Lichess(webdriver.Chrome):
 
         logger.debug(f'x_pos: {x_pos}, y_pos: {y_pos}')
         pyautogui.moveTo(x_pos, y_pos)
+
+    ###############################################################################################################
+    # give more time: 15 seconds to opponent
+    def give_more_time(self):
+        try:
+            self.find_element(By.CLASS_NAME, 'moretime').click()
+        except:
+            return None
 
     ###############################################################################################################
     # Puzzle Streak

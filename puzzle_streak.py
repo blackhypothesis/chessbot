@@ -12,8 +12,8 @@ logging.basicConfig(
     format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
     level=logging.INFO)
 
-
-stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=18, parameters={"Threads": 8})
+stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=18, parameters={"Threads": 8, "Hash": 4096})
+print(stockfish.get_parameters())
 
 lc = Lichess()
 lc.open_page('https://lichess.org/streak')
