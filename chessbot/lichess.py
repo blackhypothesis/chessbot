@@ -154,7 +154,7 @@ class Lichess(webdriver.Chrome):
             ).click()
             self.find_element(
                 By.XPATH,
-                '/html/body/div[1]/main/div[1]/div[3]/div/div/div/div[3]/div[1]/group/div[7]/label'
+                '/html/body/div[1]/main/div[1]/div[3]/div/div/div/div[3]/div[1]/group/div[8]/label'
             ).click()
             self.find_element(
                 By.XPATH,

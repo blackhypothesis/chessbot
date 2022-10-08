@@ -1,8 +1,9 @@
 import chessbot.constants as const
+import chess
+import chess.engine
 from chessbot.lichess import Lichess
 import logging
 import time
-from stockfish import Stockfish
 
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
@@ -13,8 +14,8 @@ logging.basicConfig(
     level=logging.INFO)
 
 
-# stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=16, parameters={"Threads": 8, "Hash": 4096})
-stockfish = Stockfish(path="/home/tluluma3/bin/stockfish", depth=18, parameters={"Threads": 8, "Hash": 4096})
+engine = chess.engine.SimpleEngine.popen_uci("stockfish")
+engine.configure({"Threads": 12})
 
 lc = Lichess()
 # lc.get_external_ip()
@@ -25,9 +26,8 @@ time.sleep(3)
 if const.ANON == False:
     lc.login('login', 'passwd')
     time.sleep(3)
-# lc.select_timeformat('1+0')
-lc.select_timeformat('2+1')
-
+lc.select_timeformat('1+0')
+# lc.select_timeformat('2+1')
 # lc.select_play_computer()
 
 while True:
@@ -48,10 +48,15 @@ while True:
                 while True:
                     try:
                         fen = lc.get_fen()
-                        stockfish.set_fen_position(fen)
-                        best_move = stockfish.get_best_move()
-                        print(best_move, stockfish.get_evaluation())
-                        # time.sleep(2)
+                        board = chess.Board(fen)
+                        # analyse = engine.analyse(board, chess.engine.Limit(depth=17), multipv=1)
+                        calc_time = 0.4
+                        if half_moves > 60:
+                            calc_time = 0.1
+                        analyse = engine.analyse(board, chess.engine.Limit(time=calc_time), multipv=1)
+                        print(analyse)
+                        best_move = analyse[0]["pv"][0].uci()
+                        score = analyse[0]["score"].white().score()
                         if half_moves > -1:
                             lc.play_move(best_move)
                         # print(stockfish.get_evaluation() ,stockfish.get_wdl_stats())
