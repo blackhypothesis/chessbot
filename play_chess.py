@@ -55,20 +55,34 @@ while True:
                         fen = lc.get_fen()
                         board = chess.Board(fen)
                         # analyse = engine.analyse(board, chess.engine.Limit(depth=17), multipv=1)
-                        calc_time = 0.2
+                        calc_time = 0.1
                         if 20 > half_moves > 60:
                             calc_time = 0.1
                         analyse = engine.analyse(board, chess.engine.Limit(time=calc_time), multipv=3)
+
+                        for a in reversed(analyse):
+                            print("score: ", a['score'].white().score(), "move: ", a['pv'][0].uci())
+
                         best_move = analyse[0]["pv"][0].uci()
                         best_score = analyse[0]["score"].white().score()
                         move = best_move
                         score = 0
 
-                        if best_score is not None:
-                            for a in reversed(analyse):
-                                print("score: ", a['score'].white().score(), "move: ", a['pv'][0].uci())
+                        min_score = -300
+                        if board_orientation == 'black':
+                            min_score = -min_score
 
-                            max_loss = int(asymp(step, 0.8) * 1000)
+                        is_min_score = False
+
+                        if board_orientation == 'white':
+                            if best_score < min_score:
+                                is_min_score = True
+                        elif board_orientation == 'black':
+                            if best_score > min_score:
+                                is_min_score = True
+
+                        if best_score is not None and is_min_score is False:
+                            max_loss = int(asymp(step, 0.8) * 2000)
 
                             for a in reversed(analyse):
                                 score = a['score'].white().score()
