@@ -1,5 +1,4 @@
 import chessbot.constants as const
-import chess
 import chess.engine
 from chessbot.lichess import Lichess
 import logging
@@ -8,11 +7,15 @@ import time
 main_logger = logging.getLogger()
 main_logger.setLevel(logging.INFO)
 
+
+def asymp(x, v):
+    return 1 - x / (x + v)
+
+
 logging.basicConfig(
     filename=f'{const.LOG_FILE_PATH}/chessbot.log',
     format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
     level=logging.INFO)
-
 
 engine = chess.engine.SimpleEngine.popen_uci("stockfish")
 engine.configure({"Threads": 12})
@@ -23,12 +26,14 @@ lc = Lichess()
 lc.open_page('https://lichess.org/')
 # wait, to load page
 time.sleep(3)
-if const.ANON == False:
+if not const.ANON:
     lc.login('login', 'passwd')
     time.sleep(3)
 lc.select_timeformat('1+0')
 # lc.select_timeformat('2+1')
 # lc.select_play_computer()
+
+step = 10
 
 while True:
     board_orientation = lc.new_game()
@@ -50,16 +55,36 @@ while True:
                         fen = lc.get_fen()
                         board = chess.Board(fen)
                         # analyse = engine.analyse(board, chess.engine.Limit(depth=17), multipv=1)
-                        calc_time = 0.4
-                        if half_moves > 60:
+                        calc_time = 0.2
+                        if 20 > half_moves > 60:
                             calc_time = 0.1
-                        analyse = engine.analyse(board, chess.engine.Limit(time=calc_time), multipv=1)
-                        print(analyse)
+                        analyse = engine.analyse(board, chess.engine.Limit(time=calc_time), multipv=3)
                         best_move = analyse[0]["pv"][0].uci()
-                        score = analyse[0]["score"].white().score()
+                        best_score = analyse[0]["score"].white().score()
+                        move = best_move
+                        score = 0
+
+                        if best_score is not None:
+                            for a in reversed(analyse):
+                                print("score: ", a['score'].white().score(), "move: ", a['pv'][0].uci())
+
+                            max_loss = int(asymp(step, 0.8) * 1000)
+
+                            for a in reversed(analyse):
+                                score = a['score'].white().score()
+                                if abs(best_score - score) < max_loss:
+                                    move = a['pv'][0].uci()
+                                    break
+
+                        step -= 1
+                        if step < 0:
+                            step = 10
+
+                        print("score: ", score, "move: ", move, "best_score", best_score, "max loss:", max_loss, "step: ", step)
+                        print('\n')
+
                         if half_moves > -1:
-                            lc.play_move(best_move)
-                        # print(stockfish.get_evaluation() ,stockfish.get_wdl_stats())
+                            lc.play_move(move)
                         break
                     except BaseException as e:
                         print(e)

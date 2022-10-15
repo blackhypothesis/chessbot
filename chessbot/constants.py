@@ -30,7 +30,7 @@ BEST_MOVE_PROBABILITY = 0.1
 # setoption name MultiPV value
 MULTI_PV = 4
 
-LOG_FILE_PATH = '/home/tluluma3/tmp'
+LOG_FILE_PATH = '/home/marcel/tmp'
 DEBUG = True
 
 TIME_FORMAT = ''
