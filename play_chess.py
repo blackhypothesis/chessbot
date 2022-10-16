@@ -37,6 +37,7 @@ step = 10
 
 while True:
     board_orientation = lc.new_game()
+    board = chess.Board()
 
     while True:
         game_state = lc.get_game_state()
@@ -49,11 +50,15 @@ while True:
         if lc.is_new_move():
             half_moves = lc.get_number_of_half_moves()
 
-            if board_orientation == 'white' and half_moves % 2 == 0 or board_orientation == 'black' and half_moves %2 == 1:
+            if board_orientation == 'white' and half_moves % 2 == 0 or board_orientation == 'black' and half_moves % 2 == 1:
                 while True:
                     try:
-                        fen = lc.get_fen()
-                        board = chess.Board(fen)
+                        last_move = lc.get_last_move()
+                        if last_move != "":
+                            board.push_san(last_move)
+                        print("last_move: ", last_move)
+                        print(board)
+
                         # analyse = engine.analyse(board, chess.engine.Limit(depth=17), multipv=1)
                         calc_time = 0.1
                         if 20 > half_moves > 60:
@@ -68,23 +73,12 @@ while True:
                         move = best_move
                         score = 0
 
-                        min_score = -300
-                        if board_orientation == 'black':
-                            min_score = -min_score
-
-                        is_min_score = False
-
-                        if board_orientation == 'white':
-                            if best_score < min_score:
-                                is_min_score = True
-                        elif board_orientation == 'black':
-                            if best_score > min_score:
-                                is_min_score = True
-
-                        if best_score is not None and is_min_score is False:
+                        if not analyse[0]["score"].is_mate():
                             max_loss = int(asymp(step, 0.8) * 2000)
 
                             for a in reversed(analyse):
+                                if a['score'].is_mate():
+                                    continue
                                 score = a['score'].white().score()
                                 if abs(best_score - score) < max_loss:
                                     move = a['pv'][0].uci()
@@ -99,6 +93,7 @@ while True:
 
                         if half_moves > -1:
                             lc.play_move(move)
+                            board.push_uci(move)
                         break
                     except BaseException as e:
                         print(e)

@@ -440,14 +440,31 @@ class Lichess(webdriver.Chrome):
                 'u8t'
             )
             move_list = ''
+            move_a = []
             for move in moves:
                 move_list = move_list + move.text + ' '
+                move_a.append(move.text)
             logger.info(f'move_list: {move_list}')
-            return move_list
+            return move_a
         except:
             logger.error('cannot get move_list')
             print('ERROR: cannot get move list')
 
+    def get_last_move(self):
+        try:
+            moves = self.find_element(
+                By.TAG_NAME,
+                'l4x'
+            ).find_elements(
+                By.TAG_NAME,
+                'u8t'
+            )
+            last_move = ""
+            if len(moves) != 0:
+                last_move = moves[-1].text
+            return last_move
+        except:
+            return ""
 
     ###############################################################################################################
     # active color, this color has to make the next move
