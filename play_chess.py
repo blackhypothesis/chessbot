@@ -20,6 +20,7 @@ logging.basicConfig(
 engine = chess.engine.SimpleEngine.popen_uci("stockfish")
 engine.configure({"Threads": 12})
 
+
 lc = Lichess()
 # lc.get_external_ip()
 # time.sleep(1)
@@ -59,14 +60,15 @@ while True:
                         print("last_move: ", last_move)
                         print(board)
 
+                        multi_pv = 5
+                        if half_moves > 30:
+                            multi_pv = 1
                         # analyse = engine.analyse(board, chess.engine.Limit(depth=17), multipv=1)
-                        calc_time = 0.1
-                        if 20 > half_moves > 60:
-                            calc_time = 0.1
-                        analyse = engine.analyse(board, chess.engine.Limit(time=calc_time), multipv=3)
+                        calc_time = 0.3
+                        analyse = engine.analyse(board, chess.engine.Limit(time=calc_time), multipv=multi_pv)
 
                         for a in reversed(analyse):
-                            print("score: ", a['score'].white().score(), "move: ", a['pv'][0].uci())
+                            print("depth: ", a['depth'], "score: ", a['score'].white().score(), "move: ", a['pv'][0].uci())
 
                         best_move = analyse[0]["pv"][0].uci()
                         best_score = analyse[0]["score"].white().score()
@@ -74,7 +76,7 @@ while True:
                         score = 0
 
                         if not analyse[0]["score"].is_mate():
-                            max_loss = int(asymp(step, 0.8) * 2000)
+                            max_loss = int(asymp(step, 0.8) * 1000)
 
                             for a in reversed(analyse):
                                 if a['score'].is_mate():
